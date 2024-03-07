@@ -41,9 +41,140 @@
  */
 const express = require('express');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const { fileURLToPath } = require('url');
+const path = require("path");
 
 const app = express();
+const port = 3000;
+
+//var todos = [];
 
 app.use(bodyParser.json());
+
+function getAllTodos(req, res) {
+  //send all the created todos
+  //res.send(todos);
+
+  fs.readFile(__dirname+"/files/todoList.json", "utf-8", (err, data)=> {
+    if(err) {
+      console.log("There is an error while reading the file");
+      res.status(500).send("Error while trying to retrieve the todoList content");
+    }
+    //we are parsing the data here so that, users don't receieve string
+    res.json(JSON.parse(data));
+  })
+}
+
+function createTodoItem(req, res) {
+  //add the new todo to the global todo list
+  var todoItem = req.body.todoItem;
+  var uniqueId = Math.floor(Math.random()*10000);
+  var newItem = {
+    id: uniqueId,
+    title: todoItem.title,
+    description: todoItem.description
+  }
+  fs.readFile(__dirname+"/files/todoList.json", "utf8", (err, data)=> {
+    if(err) {
+      return res.status(500).send("Failed to read the todoList file");
+    }
+    currentTodos = JSON.parse(data);
+    currentTodos.push(newItem);
+    fs.writeFile(__dirname+"/files/todoList.json", JSON.stringify(currentTodos), (err) => {
+      if(err) {
+        throw err;
+      }
+      res.status(201).json(newItem);
+    })
+  })
+}
+
+function getTodoItemForId(req, res) {
+  //retrieve the todo item, given the id
+  var inputId = parseInt(req.params.id);
+  
+
+  fs.readFile(__dirname+"/files/todoList.json", "utf-8", (err, data)=> {
+    if(err) {
+      return res.status(500).send("Error in reading the file, cannot perform this operation");
+    }
+    var fileContent = JSON.parse(data);
+    for(var i=0; i<fileContent.length; i++) {
+      if(inputId==fileContent[i].id) {
+        return res.json(fileContent[i]);
+      }
+    }
+    return res.status(401).send("Invalid Id sent, please send the right id to retrieve the right todo");
+  })
+}
+
+function udpateTodoItem(req, res) {
+  //given an id, update the todoItem with that id
+
+  inputId = parseInt(req.params.id);
+  itemToUpdate = req.body.todoItem;
+
+  fs.readFile(__dirname+"/files/todoList.json", "utf-8", (err, data)=> {
+    if(err) {
+      return res.status(500).send("Error while reading the file, cannot perform this operation");
+    }
+    var fileContent = JSON.parse(data);
+    for(var i=0; i<fileContent.length; i++) {
+      if(inputId == fileContent[i].id) {
+        //update this item
+        fileContent[i].title = itemToUpdate.title;
+        fileContent[i].description = itemToUpdate.description;
+        //push this back to the file
+        fs.writeFile(__dirname+"/files/todoList.json",JSON.stringify(fileContent), "utf-8", (err)=> {
+          if(err) {
+            return res.status(500).send("Error while updating the file wit the udpated content");
+          }
+        })
+        return res.json(fileContent[i]);
+      }
+    }
+    return res.status(400).send("Invalid Id passed, please check and pass the right id to update");
+  })
+}
+
+function deleteItemOfId(req, res) {
+  //again before proceeding, check if the id is valid
+  var inputId = parseInt(req.params.id);
+  fs.readFile(__dirname+"/files/todoList.json", "utf-8", (err, data)=> {
+    if(err) {
+      return res.status(500).send("Error while reading the file, cannot perform this operation");
+    }
+    fileContent = JSON.parse(data);
+    for(var i=0; i<fileContent.length; i++) {
+      if(fileContent[i].id==inputId) {
+        //delete it
+        fileContent.splice(i, 1);
+        //update the file
+        fs.writeFile(__dirname+"/files/todoList.json", JSON.stringify(fileContent), "utf-8", (err)=> {
+          if(err) {
+            return res.status(500).send("Error while updating the filecontents after deletion");
+          }
+        })
+        return res.json(fileContent);
+      }
+    }
+    return res.status(401).send("Invalid id, cannot delete, please provide the right id");
+  })
+}
+
+app.get('/todos', getAllTodos);
+app.post('/todos', createTodoItem);
+app.get('/todos/:id', getTodoItemForId);
+app.put('/todos/:id', udpateTodoItem);
+app.delete('/todos/:id', deleteItemOfId);
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
+
+app.get("/", (req, res)=> {
+  res.sendFile(path.join(__dirname,"index.html"));
+})
 
 module.exports = app;

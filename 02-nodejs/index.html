@@ -1,0 +1,155 @@
+<head>
+    <title>
+        Hi from MERN Stack page
+    </title>
+</head>
+<script>
+     function parsedResponse(data) {
+            console.log(data);
+        }
+        function callback(resp) {
+        resp.json().then(parsedResponse);
+    }
+    function onPress() {
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        fetch("http://localhost:3000/todos", {
+            method: "POST",
+            body: JSON.stringify({
+                "todoItem": {
+                    title: title,
+                    description: description
+                }
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+
+        }).then(callback)
+    }
+    function getTodos() {
+        //display all the todos until so far
+        fetch("http://localhost:3000/todos", {
+            method: "GET"
+        }).then((resp)=> {
+            resp.json().then((data)=> {
+                //console.log(data);
+                const tasksList = document.getElementById("tasks-list");
+                tasksList.innerHTML = '';
+                data.forEach(task => {
+    const listItem = document.createElement("li");
+    listItem.innerHTML = `
+      <h2>${task.title}</h2>
+      <p>${task.description}</p>
+    `;
+    tasksList.appendChild(listItem);
+  }); 
+            })
+        })
+    }
+
+    function getTodoForId() {
+        //get the todo item, given an id
+        const id = document.getElementById("getTodoForId").value;
+        fetch(`http://localhost:3000/todos/${id}`, {
+            method: "GET",
+        }).then((resp)=> {
+            resp.json().then((data)=> {
+                //console.log(data);
+                const todoItem = document.getElementById("todo-item");
+                    todoItem.innerHTML = "";
+                    const item = document.createElement("li");
+                    item.innerHTML = `
+                        <h2>${data.title}</h2>
+                        <p>${data.description}</p>
+                    `;
+                    todoItem.appendChild(item);
+            })
+        })
+    }
+
+    function updatedTodoForId() {
+        //update the todo for a given id
+        const id = document.getElementById("updateTodoId").value;
+        const title = document.getElementById("updateTodoTitle").value;
+        const description = document.getElementById("updateTodoDescription").value;
+        fetch(`http://localhost:3000/todos/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+                todoItem: {
+                    title: title,
+                description: description
+                }
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((resp)=> {
+            if (resp.status === 200) {
+                alert("Sucessfully updated for this id");
+            }
+            else {
+                alert("Failed");
+            }
+        })
+    }
+
+    function deleteItemForId() {
+        //delete the todoItemf or an Id
+        const id = document.getElementById("deleteTodoItem").value;
+        fetch(`http://localhost:3000/todos/${id}`, {
+            method: "DELETE"
+        }).then((resp)=> {
+           if(resp.status === 200) {
+            alert("Successfully deleted the Id!!");
+           }
+           else {
+            alert("Failed")
+           }
+        })
+    }
+</script>
+<body>
+    <h2>Add Todos into your List</h2>
+    Todo title
+    <input type="text" id="title"></input>
+    <br><br>
+    Todo description
+    <input type="text" id="description"></input>
+    <br><br>
+    <button onclick="onPress()">send todo</button>
+    <br><br><br>
+
+
+    <h2>Get All the Todos</h2>
+    <button onclick="getTodos()">get todos</button>
+    <ul id="tasks-list">
+        <!-- Todo items will be dynamically added here -->
+    </ul>
+
+
+    <h2>Get TodoItem for Id</h2>
+    <input type="text" id="getTodoForId"></input>
+    <button onclick="getTodoForId()">Get Todo for Id</button>
+    <ul id="todo-item">
+        <!-- Todo item will be dynamically added here -->
+    </ul>
+
+    <h2>Update Item for Todo</h2>
+    Update Id
+    <input type="text" id="updateTodoId"></input>
+    <br><br>
+    Update Title
+    <input type="text" id="updateTodoTitle"></input>
+    <br><br>
+    Update Description
+    <input type="text" id="updateTodoDescription"></input>
+    <button onclick="updatedTodoForId()">Update Todo for Id</button>
+    <br><br><br>
+
+
+    <h2> Delete a TodoItem for Id</h2>
+    Id to Delete
+    <input type="text" id="deleteTodoItem"></input>
+    <button onclick="deleteItemForId()">Delete Item for Id</button>
+</body>
